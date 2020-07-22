@@ -17,7 +17,7 @@ public class Heuristics {
     private String protocolType;
 
 
-    public Heuristics(HostDescription hostDescription, int loadBalancingCause, Vector responses){
+    public Heuristics(HostDescription hostDescription, int loadBalancingCause, Vector responses) {
         this.hostDescription = hostDescription;
         this.responses = responses;
         this.selectedHost = null;
@@ -41,15 +41,17 @@ public class Heuristics {
         }
     }
 
-    public HostDescription getSelectedHost(){
+    public HostDescription getSelectedHost() {
         return selectedHost;
     }
 
-    public VirtualMachineDescription getSelectedVM(){
+    public VirtualMachineDescription getSelectedVM() {
         return selectedVM;
     }
 
-    public double getValuationValue(){ return valuationValue; }
+    public double getValuationValue() {
+        return valuationValue;
+    }
 
     // returns the usage of hostA
     // if vm and hostB are not null, it considers a new virtual machine 'vm' into hostA
@@ -61,8 +63,8 @@ public class Heuristics {
         int size = 0;
         //if(hostA != null && hostA.getVirtualMachinesHosted() != null)
         size = hostA.getVirtualMachinesHosted().size();
-        if(protocolType.equals("AtoB")) {
-            if(vm != null && hostB != null) {
+        if (protocolType.equals("AtoB")) {
+            if (vm != null && hostB != null) {
                 if (hostA.getId().equals(hostDescription.getId())) { // it emulates that the VM is not inside in hostA
                     size--;
                 } else if (hostA.getId().equals(hostB.getId())) {
@@ -71,9 +73,8 @@ public class Heuristics {
                     size++;
                 }
             }
-        }
-        else if(protocolType.equals("BtoA")) {
-            if(vm != null && hostB != null) {
+        } else if (protocolType.equals("BtoA")) {
+            if (vm != null && hostB != null) {
                 if (hostA.getId().equals(hostDescription.getId())) { // it emulates that the VM is inside in hostA
                     sumCPUUsage = ((vm.getCPUUsage() / 100) * vm.getNumberOfVirtualCores());
                     sumMemoryUsage = (vm.getMemoryUsage() / 100) * vm.getMemory();
@@ -146,13 +147,13 @@ public class Heuristics {
     }
 
     // The individual utility of the host
-    private double preimputation(){
+    private double preimputation() {
         return preimputation(null, null);
     }
 
     // The individual utility of another host
     private double preimputation(HostDescription hostB, VirtualMachineDescription vm) {
-        double coalition_value = Math.abs(1 - stdDev(hostB, vm)/50);  // the coalition value
+        double coalition_value = Math.abs(1 - stdDev(hostB, vm) / 50);  // the coalition value
 
         double sum = 0.0;
         if (resource.toLowerCase().equals("cpu")) {
@@ -185,23 +186,23 @@ public class Heuristics {
     }
 
 
-    private double valuation_function(HostDescription hostB, VirtualMachineDescription vm){
+    private double valuation_function(HostDescription hostB, VirtualMachineDescription vm) {
         return preimputation(hostB, vm) - preimputation(); // pi = preimputation(t+1) - preimputation(t)
     }
 
 
     // heuristics
-    public void heuristic_exhaustive(){
+    public void heuristic_exhaustive() {
         double val = 0.0;
         double max_val = val;
         Enumeration participantHosts = responses.elements(); // responses from all the other (PARTICIPANT) hosts
         while (participantHosts.hasMoreElements()) {
             try {
                 HostDescription participantHost = (HostDescription) ((ACLMessage) participantHosts.nextElement()).getContentObject();
-                if(participantHost == null) // ¿porqué a veces ocurre esto?
+                if (participantHost == null) // ¿porqué a veces ocurre esto?
                     continue;
                 if (protocolType.equals("AtoB")) {
-                    if(hostDescription.getVirtualMachinesHosted() != null && hostDescription.getVirtualMachinesHosted().size() > 0) {
+                    if (hostDescription.getVirtualMachinesHosted() != null && hostDescription.getVirtualMachinesHosted().size() > 0) {
                         for (VirtualMachineDescription vmDescription : hostDescription.getVirtualMachinesHosted()) {
                             if ((vmDescription.getNumberOfVirtualCores() <= participantHost.getAvailableVirtualCores()) && (vmDescription.getMemory() <= participantHost.getAvailableMemory())) // is the vm fit in the proposed host?
                             {
@@ -215,9 +216,8 @@ public class Heuristics {
                             }
                         }
                     }
-                }
-                else if (protocolType.equals("BtoA")) {
-                    if(participantHost.getVirtualMachinesHosted() != null && participantHost.getVirtualMachinesHosted().size() > 0) {
+                } else if (protocolType.equals("BtoA")) {
+                    if (participantHost.getVirtualMachinesHosted() != null && participantHost.getVirtualMachinesHosted().size() > 0) {
                         for (VirtualMachineDescription vmDescription : participantHost.getVirtualMachinesHosted()) {
                             if ((vmDescription.getNumberOfVirtualCores() <= hostDescription.getAvailableVirtualCores()) && (vmDescription.getMemory() <= hostDescription.getAvailableMemory())) // is the proposed vm fit in the host?
                             {
@@ -282,9 +282,9 @@ public class Heuristics {
                 }
             }
         } else if (protocolType.equals("BtoA")) {
-            if(participantHost.getVirtualMachinesHosted() != null && participantHost.getVirtualMachinesHosted().size() > 0) {
+            if (participantHost.getVirtualMachinesHosted() != null && participantHost.getVirtualMachinesHosted().size() > 0) {
                 for (VirtualMachineDescription vmDescription : participantHost.getVirtualMachinesHosted()) {
-                    if ((vmDescription.getNumberOfVirtualCores() <= hostDescription.getAvailableVirtualCores()) && (vmDescription.getMemory() <= hostDescription.getAvailableMemory())){ // is the proposed vm fit in the host?
+                    if ((vmDescription.getNumberOfVirtualCores() <= hostDescription.getAvailableVirtualCores()) && (vmDescription.getMemory() <= hostDescription.getAvailableMemory())) { // is the proposed vm fit in the host?
                         val = valuation_function(hostDescription, vmDescription);
                         if (val > max_val) {
                             this.selectedHost = participantHost;
@@ -319,14 +319,12 @@ public class Heuristics {
     }
 
 
-
-    private double GetRandomNumber(double minimum, double maximum)
-    {
+    private double GetRandomNumber(double minimum, double maximum) {
         Random random = new Random();
         return random.nextDouble() * (maximum - minimum) + minimum;
     }
 
-    public void heuristic_roulette_wheel(){
+    public void heuristic_roulette_wheel() {
         double total_sum = 0.0;
         Enumeration participantHosts = responses.elements(); // responses from all the other (PARTICIPANT) hosts
         try {
@@ -336,8 +334,7 @@ public class Heuristics {
                     continue;
                 if (resource.toLowerCase().equals("cpu")) {
                     total_sum += participantHost.getCPUUsage();
-                }
-                else if (resource.toLowerCase().equals("memory")) {
+                } else if (resource.toLowerCase().equals("memory")) {
                     total_sum += participantHost.getMemoryUsage();
                 }
 
@@ -350,11 +347,10 @@ public class Heuristics {
                     continue;
                 if (resource.toLowerCase().equals("cpu")) {
                     partialSum += participantHost.getCPUUsage();
-                }
-                else if (resource.toLowerCase().equals("memory")) {
+                } else if (resource.toLowerCase().equals("memory")) {
                     partialSum += participantHost.getMemoryUsage();
                 }
-                if(partialSum >= rand){
+                if (partialSum >= rand) {
                     this.selectedHost = participantHost;
                 }
             }
@@ -376,9 +372,9 @@ public class Heuristics {
                     }
                 }
             } else if (protocolType.equals("BtoA")) {
-                if(participantHost.getVirtualMachinesHosted() != null && participantHost.getVirtualMachinesHosted().size() > 0) {
+                if (participantHost.getVirtualMachinesHosted() != null && participantHost.getVirtualMachinesHosted().size() > 0) {
                     for (VirtualMachineDescription vmDescription : participantHost.getVirtualMachinesHosted()) {
-                        if ((vmDescription.getNumberOfVirtualCores() <= hostDescription.getAvailableVirtualCores()) && (vmDescription.getMemory() <= hostDescription.getAvailableMemory())){ // is the proposed vm fit in the host?
+                        if ((vmDescription.getNumberOfVirtualCores() <= hostDescription.getAvailableVirtualCores()) && (vmDescription.getMemory() <= hostDescription.getAvailableMemory())) { // is the proposed vm fit in the host?
                             val = valuation_function(hostDescription, vmDescription);
                             if (val > max_val) {
                                 this.selectedHost = participantHost;

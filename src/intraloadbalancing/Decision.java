@@ -8,7 +8,6 @@ package intraloadbalancing;
 import java.io.Serializable;
 
 /**
- *
  * @author octavio
  */
 public class Decision implements Serializable {
@@ -21,7 +20,7 @@ public class Decision implements Serializable {
     private int highMigrationThresholdForCPU;
     private int lowMigrationThresholdForMemory;
     private int highMigrationThresholdForMemory;
-    
+
     // decision = -1 : null value meaning no decision. Consts.DECISION_TYPE_DONT_MIGRATE = -1;
     // decision = 0 : selectedVM should be migrated from this host to the selectedHost.  Consts.DECISION_TYPE_MIGRATE_FROM_A_TO_B = 0;
     // decision = 1 : selectedVM should be migrated from the selectedHost to this host. Consts.DECISION_TYPE_MIGRATE_FROM_B_TO_A = 1;
@@ -39,7 +38,6 @@ public class Decision implements Serializable {
         this.selectedVM = selectedVM;
         this.decision = decision;
     }
-    
 
 
     public HostDescription getSourceHost() {
@@ -110,7 +108,6 @@ public class Decision implements Serializable {
     public String toString() {
         return "Decision{" + "destinationHost=" + destinationHost + ", sourceHost=" + sourceHost + ", selectedVM=" + selectedVM + ", decision=" + decision + ", lowMigrationThresholdForCPU=" + lowMigrationThresholdForCPU + ", highMigrationThresholdForCPU=" + highMigrationThresholdForCPU + ", lowMigrationThresholdForMemory=" + lowMigrationThresholdForMemory + ", highMigrationThresholdForMemory=" + highMigrationThresholdForMemory + '}';
     }
-    
-    
+
 
 }

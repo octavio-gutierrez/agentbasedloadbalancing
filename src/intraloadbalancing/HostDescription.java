@@ -4,40 +4,39 @@ import java.util.ArrayList;
 import java.util.function.Predicate;
 
 /**
- *
  * @author JGUTIERRGARC
  */
 class HostDescription implements java.io.Serializable {
 
-    private String id="";
-    private boolean inProgress=false;
-    private int coalition=-1;
-    private double memoryUsage=0;
-    private double CPUUsage=0;
-    private double memory=0;
-    private double memoryUsed=0;
-    private double lockedMemory=0;
-    private int numberOfVirtualCores=0;
-    private int numberOfVirtualCoresUsed=0;
-    private int numberOfLockedVirtualCores=0;
-    private int lowMigrationThresholdForCPU=0;
-    private int highMigrationThresholdForCPU=0;
-    private int lowMigrationThresholdForMemory=0;
-    private int highMigrationThresholdForMemory=0;
-    private boolean willingToParticipateInCNP=false;
-    private boolean leader=false;
-    private int CPUMigrationHeuristicId=0; 
-    private int memoryMigrationHeuristicId=0; // TBD potentially a random heuristic to avoid bias
-    private String containerName="";
-    private ArrayList<VirtualMachineDescription> virtualMachinesHosted = new ArrayList<VirtualMachineDescription>();;
-    private String allocatorId="";
-    private String myLeader="";
+    private String id = "";
+    private boolean inProgress = false;
+    private int coalition = -1;
+    private double memoryUsage = 0;
+    private double CPUUsage = 0;
+    private double memory = 0;
+    private double memoryUsed = 0;
+    private double lockedMemory = 0;
+    private int numberOfVirtualCores = 0;
+    private int numberOfVirtualCoresUsed = 0;
+    private int numberOfLockedVirtualCores = 0;
+    private int lowMigrationThresholdForCPU = 0;
+    private int highMigrationThresholdForCPU = 0;
+    private int lowMigrationThresholdForMemory = 0;
+    private int highMigrationThresholdForMemory = 0;
+    private boolean willingToParticipateInCNP = false;
+    private boolean leader = false;
+    private int CPUMigrationHeuristicId = 0;
+    private int memoryMigrationHeuristicId = 0; // TBD potentially a random heuristic to avoid bias
+    private String containerName = "";
+    private ArrayList<VirtualMachineDescription> virtualMachinesHosted = new ArrayList<VirtualMachineDescription>();
+    ;
+    private String allocatorId = "";
+    private String myLeader = "";
 
     public HostDescription() {
-        this.willingToParticipateInCNP=true;        
+        this.willingToParticipateInCNP = true;
         this.virtualMachinesHosted = new ArrayList<VirtualMachineDescription>();
     }
-    
 
 
     public HostDescription(boolean leader, String id, int coalition, double memoryUsage, double CPUUsage, double memory, double memoryUsed, int numberOfVirtualCores, int numberOfVirtualCoresUsed, int lowMigrationThresholdForCPU, int highMigrationThresholdForCPU, int lowMigrationThresholdForMemory, int highMigrationThresholdForMemory, int CPUMigrationHeuristicId, int memoryMigrationHeuristicId, String allocatorId, String containerName, String myLeader) {
@@ -62,7 +61,7 @@ class HostDescription implements java.io.Serializable {
         this.lockedMemory = 0.0;
         this.numberOfLockedVirtualCores = 0;
         this.myLeader = myLeader;
-        this.willingToParticipateInCNP=true;
+        this.willingToParticipateInCNP = true;
         this.inProgress = false;
     }
 
@@ -89,14 +88,14 @@ class HostDescription implements java.io.Serializable {
     public ArrayList<VirtualMachineDescription> getVirtualMachinesHosted() {
         return virtualMachinesHosted;
     }
-    
+
     public boolean isVirtualMachineHosted(String id) {
         ArrayList<VirtualMachineDescription> availableVMs = new ArrayList<>(virtualMachinesHosted);
         Predicate<VirtualMachineDescription> condition = vmDescription -> !vmDescription.getId().equals(id);
         availableVMs.removeIf(condition);
         return !availableVMs.isEmpty();
     }
-    
+
 
     public String getMyLeader() {
         return myLeader;
@@ -280,8 +279,8 @@ class HostDescription implements java.io.Serializable {
     public String toString() {
         return "InProgress=" + inProgress
                 + ", id=" + id
-                + ", coalition=" + coalition                
-                +", Leader=" + leader
+                + ", coalition=" + coalition
+                + ", Leader=" + leader
                 + ", containerName=" + containerName
                 + ", nCores=" + numberOfVirtualCores
                 + ", nCoresUsed=" + numberOfVirtualCoresUsed

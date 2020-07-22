@@ -11,10 +11,10 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.SequentialBehaviour;
 import jade.core.behaviours.SimpleBehaviour;
 import jade.lang.acl.ACLMessage;
+
 import java.util.Random;
 
 /**
- *
  * @author octavio
  */
 public class WorkloadGeneratorAgent extends Agent {
@@ -37,7 +37,7 @@ public class WorkloadGeneratorAgent extends Agent {
             long delay = (long) (Consts.AVG_INTERARRIVAL_TIME * (-Math.log(Math.random()))); //  Arrival process is Poisson-distributed
             averageDelay = averageDelay + delay;
             setOfvirtualMachineRequests.addSubBehaviour(new DelayBehaviour(this, (long) delay));
-            
+
             int[] VMspecs = Consts.VM_OPTIONS[(new Random()).nextInt(Consts.VM_OPTIONS.length)];
             VirtualMachineDescription vm = new VirtualMachineDescription(
                     "VirtualMachineAgent" + String.valueOf(virtualMachinesRequested + 1), // id

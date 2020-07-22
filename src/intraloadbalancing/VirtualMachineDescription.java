@@ -7,7 +7,6 @@ package intraloadbalancing;
 import java.util.Comparator;
 
 /**
- *
  * @author octavio
  */
 class VirtualMachineDescription implements java.io.Serializable, Comparable<VirtualMachineDescription> {
@@ -26,23 +25,21 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
     private String ownerId;
     private String previousOwnerId;
     private String migrationType; //AtoB or BtoA
-    private int migrationCause; 
-    private int coalition;    
-
-
+    private int migrationCause;
+    private int coalition;
 
 
     public VirtualMachineDescription() {
         this.lock = false;
         this.containerName = "";
-        this.migrationType="";
+        this.migrationType = "";
     }
 
     public VirtualMachineDescription(String id) {
         this.id = id;
         this.lock = false;
         this.containerName = "";
-        this.migrationType="";
+        this.migrationType = "";
     }
 
     public VirtualMachineDescription(String id, int numberOfVirtualCores, int memory) {
@@ -51,7 +48,7 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
         this.memory = memory;
         this.lock = false;
         this.containerName = "";
-        this.migrationType="";
+        this.migrationType = "";
     }
 
     public void setId(String id) {
@@ -77,7 +74,7 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
     public void setMigrationCause(int migrationCause) {
         this.migrationCause = migrationCause;
     }
-    
+
     public String getPreviousOwnerId() {
         return previousOwnerId;
     }
@@ -85,7 +82,7 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
     public void setPreviousOwnerId(String previousOwnerId) {
         this.previousOwnerId = previousOwnerId;
     }
-    
+
     public String getMigrationType() {
         return migrationType;
     }
@@ -93,7 +90,7 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
     public void setMigrationType(String migrationType) {
         this.migrationType = migrationType;
     }
-    
+
     public String getOwnerId() {
         return ownerId;
     }

@@ -16,6 +16,7 @@ import jade.core.behaviours.TickerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
+
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -26,7 +27,6 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 
 /**
- *
  * @author octavio
  */
 public class AllocatorAgent extends Agent {
@@ -36,13 +36,13 @@ public class AllocatorAgent extends Agent {
     private ArrayList<HostDescription> hosts;
     private ArrayList<HostDescription> possiblyCompromisedHosts;
     private ArrayList<HostDescription> hostLeaders;
-    
+
     private Utilities utils;
     transient protected AllocatorAgentGUI allocatorAgentGUI; // Reference to the gui    
     private boolean CPUThresholdViolated;       // I DO NOT USE THEM. However, they might be used to include additional information.
     private boolean memoryThresholdViolated;
     private boolean VMWAREkeepMigrating;
-    
+
 
     public AllocatorAgent() {
         possiblyCompromisedHosts = new ArrayList<HostDescription>();
@@ -51,17 +51,17 @@ public class AllocatorAgent extends Agent {
         firstArrival = true; // This is to indicate that the simulation has started and that the the logging process should begin. 
         CPUThresholdViolated = false;
         memoryThresholdViolated = false;
-        VMWAREkeepMigrating = false; 
+        VMWAREkeepMigrating = false;
     }
 
     @Override
     protected void setup() {
-        
+
         utils.publishService(this, "AllocatorAgent");
 
         Object[] args = getArguments();
         hosts = (ArrayList<HostDescription>) args[0];
-        hostLeaders= (ArrayList<HostDescription>) args[1];  //Added Joel 2020-06-24
+        hostLeaders = (ArrayList<HostDescription>) args[1];  //Added Joel 2020-06-24
         if (!Consts.LOG) {
             System.out.println("\n" + hosts + "\n");
         }
@@ -82,7 +82,7 @@ public class AllocatorAgent extends Agent {
         private double[] lastCPUStdDev;
         private double[] lastMemoryStdDev;
         private int numberOfContinuousMigrations;
-        
+
         public Logger(Agent agt) {
             super(agt, Consts.LOGGING_RATE);
             this.agt = agt;
@@ -115,7 +115,7 @@ public class AllocatorAgent extends Agent {
 //                    balancing_metric += ", ";
 //                }
 //            }
-            
+
             for (int i = 0; i < hostLeaders.size(); i++) {
                 balancing_metric += "{\"id\":" + hostLeaders.get(i).getCoalition() + ", ";
                 balancing_metric += "\"CPUMean\":" + df.format(mean("cpu", hosts, hostLeaders.get(i).getCoalition())) + ", ";
@@ -126,20 +126,20 @@ public class AllocatorAgent extends Agent {
                     balancing_metric += ", ";
                 }
             }
-            
+
 
             balancing_metric += "], \"time\":" + time + "}";
 
             if ((mean("cpu", hosts, -1) != 0) && (mean("memory", hosts, -1) != 0)) { // if there is load, then log it.
-                finalCountDown=0;
+                finalCountDown = 0;
                 if (Consts.LOG) {
                     System.out.println(balancing_metric);
                 }
 
                 if (Consts.LOAD_BALANCING_TYPE == Consts.VMWARE_CENTRALIZED_WITH_NO_COALITIONS) {
                     currentTick++;
-                    lastCPUStdDev[currentTick] = stdDev("cpu",hosts, -1);
-                    lastMemoryStdDev[currentTick] = stdDev("memory",hosts, -1);
+                    lastCPUStdDev[currentTick] = stdDev("cpu", hosts, -1);
+                    lastMemoryStdDev[currentTick] = stdDev("memory", hosts, -1);
                     if ((currentTick == (Consts.TIME_WINDOW_IN_TERMS_OF_REPORTING_RATE - 1)) || (VMWAREkeepMigrating)) {
                         //System.out.println("Check whether I need to migrate");
                         double totalCPUStdDev = 0;
@@ -153,12 +153,12 @@ public class AllocatorAgent extends Agent {
                         double avgCPUStdDev = totalCPUStdDev / (double) lastCPUStdDev.length; // average CPU Std dev within a time window
                         double avgMemoryStdDev = totalMemoryStdDev / (double) lastMemoryStdDev.length; // average Memory Std dev within a time window
                         //System.out.println("numberOfContinuousMigrations "+ numberOfContinuousMigrations);
-                        if (numberOfContinuousMigrations>=Consts.VMWARE_MAX_MIGRATIONS) {
+                        if (numberOfContinuousMigrations >= Consts.VMWARE_MAX_MIGRATIONS) {
                             numberOfContinuousMigrations = 0;
                             VMWAREkeepMigrating = false;
                             //currentTick = -1;
-                        }else if (((avgCPUStdDev <= Consts.TARGET_STD_DEV) && VMWAREkeepMigrating && Consts.VMWARE_BALANCE_CPU_LOAD) ||
-                            ((avgMemoryStdDev <= Consts.TARGET_STD_DEV) && VMWAREkeepMigrating && Consts.VMWARE_BALANCE_MEMORY_LOAD) ) {
+                        } else if (((avgCPUStdDev <= Consts.TARGET_STD_DEV) && VMWAREkeepMigrating && Consts.VMWARE_BALANCE_CPU_LOAD) ||
+                                ((avgMemoryStdDev <= Consts.TARGET_STD_DEV) && VMWAREkeepMigrating && Consts.VMWARE_BALANCE_MEMORY_LOAD)) {
                             numberOfContinuousMigrations = 0;
                             VMWAREkeepMigrating = false;
                             //currentTick = -1;
@@ -183,8 +183,7 @@ public class AllocatorAgent extends Agent {
                             //System.out.println("I NEED TO BALANCE MEMORY");
                             agt.addBehaviour(new VMWARE_LoadBalancing(agt, Consts.MIGRATION_CAUSE_VMWARE_JUST_MEMORY, avgMemoryStdDev));
                         }
-                        
-                        
+
 
                         if (currentTick == (Consts.TIME_WINDOW_IN_TERMS_OF_REPORTING_RATE - 1)) {
                             currentTick = -1;
@@ -281,7 +280,7 @@ public class AllocatorAgent extends Agent {
         return aDeepCopyOfVM;
     }
 
-    private static HostDescription deepCopyHost(HostDescription host){
+    private static HostDescription deepCopyHost(HostDescription host) {
         HostDescription aDeepCopyOfHost = new HostDescription();
         aDeepCopyOfHost.setAllocatorId(host.getAllocatorId());
         aDeepCopyOfHost.setMyLeader(host.getMyLeader());
@@ -305,13 +304,13 @@ public class AllocatorAgent extends Agent {
         aDeepCopyOfHost.setMemoryMigrationHeuristicId(host.getMemoryMigrationHeuristicId());
         aDeepCopyOfHost.setContainerName(host.getContainerName());
         aDeepCopyOfHost.setInProgress(host.isInProgress());
-        if (host.getVirtualMachinesHosted()!= null) {
-            if (host.getVirtualMachinesHosted().size()>0) {
-                for (int i=0; i<host.getVirtualMachinesHosted().size(); i++){
-                    try{
-                        if (host.getVirtualMachinesHosted().get(i)!=null)
-                            aDeepCopyOfHost.getVirtualMachinesHosted().add(deepCopyVM(host.getVirtualMachinesHosted().get(i)));                
-                    } catch (Exception e){
+        if (host.getVirtualMachinesHosted() != null) {
+            if (host.getVirtualMachinesHosted().size() > 0) {
+                for (int i = 0; i < host.getVirtualMachinesHosted().size(); i++) {
+                    try {
+                        if (host.getVirtualMachinesHosted().get(i) != null)
+                            aDeepCopyOfHost.getVirtualMachinesHosted().add(deepCopyVM(host.getVirtualMachinesHosted().get(i)));
+                    } catch (Exception e) {
                         if (Consts.EXCEPTIONS)
                             e.printStackTrace();
                     }
@@ -322,19 +321,19 @@ public class AllocatorAgent extends Agent {
             }
         }
 
-        
+
         return aDeepCopyOfHost;
     }
-    
-    
+
+
     private static ArrayList<HostDescription> getUpdatedCopyOfDatacenter(ArrayList<HostDescription> hosts, HostDescription updatedSourceHost, HostDescription updatedDestinationHost) {
         ArrayList<HostDescription> updatedListOfHosts = new ArrayList<HostDescription>();
-        for (int i=0; i<hosts.size(); i++) {
-            if (!(hosts.get(i).getId().equals(updatedSourceHost.getId()) || hosts.get(i).getId().equals(updatedDestinationHost.getId()))){
+        for (int i = 0; i < hosts.size(); i++) {
+            if (!(hosts.get(i).getId().equals(updatedSourceHost.getId()) || hosts.get(i).getId().equals(updatedDestinationHost.getId()))) {
                 updatedListOfHosts.add(deepCopyHost(hosts.get(i)));
             }
-        }        
-        
+        }
+
 //        for (HostDescription host : hosts) {
 //            if (!(host.getId().equals(updatedSourceHost.getId()) || host.getId().equals(updatedDestinationHost.getId()))){
 //                updatedListOfHosts.add(deepCopyHost(host));
@@ -344,20 +343,21 @@ public class AllocatorAgent extends Agent {
         updatedListOfHosts.add(updatedDestinationHost);
         return updatedListOfHosts;
     }
-    
-    private static HostDescription removeVMfromHost(HostDescription host, String VMIdtoBeRemoved){
+
+    private static HostDescription removeVMfromHost(HostDescription host, String VMIdtoBeRemoved) {
         HostDescription updatedHost = deepCopyHost(host);
         updatedHost.getVirtualMachinesHosted().clear();
-        for (VirtualMachineDescription vm : host.getVirtualMachinesHosted()){
-            if (!vm.getId().equals(VMIdtoBeRemoved)){
-                updatedHost.getVirtualMachinesHosted().add(deepCopyVM(vm));            
+        for (VirtualMachineDescription vm : host.getVirtualMachinesHosted()) {
+            if (!vm.getId().equals(VMIdtoBeRemoved)) {
+                updatedHost.getVirtualMachinesHosted().add(deepCopyVM(vm));
             }
         }
         return updatedHost;
     }
-    private static HostDescription getDeepCopyOfHost(ArrayList<HostDescription> hosts, String hostId){
-        for (HostDescription host : hosts){
-            if (host.getId().equals(hostId)){
+
+    private static HostDescription getDeepCopyOfHost(ArrayList<HostDescription> hosts, String hostId) {
+        for (HostDescription host : hosts) {
+            if (host.getId().equals(hostId)) {
                 return deepCopyHost(host);
             }
         }
@@ -370,7 +370,7 @@ public class AllocatorAgent extends Agent {
         ArrayList<HostDescription> safeHosts = new ArrayList<HostDescription>();
         ArrayList<VirtualMachineDescription> currentVMs = new ArrayList<VirtualMachineDescription>();
 
-        for (int i=0; i<hosts.size(); i++){
+        for (int i = 0; i < hosts.size(); i++) {
             if (!possiblyCompromisedHosts.contains(hosts.get(i))) {
                 safeHosts.add(deepCopyHost(hosts.get(i)));
             }
@@ -382,8 +382,8 @@ public class AllocatorAgent extends Agent {
 //        }
 
 
-        for (int i=0; i<safeHosts.size(); i++) {
-            for (int j=0; j<safeHosts.get(i).getVirtualMachinesHosted().size(); j++) {            
+        for (int i = 0; i < safeHosts.size(); i++) {
+            for (int j = 0; j < safeHosts.get(i).getVirtualMachinesHosted().size(); j++) {
                 currentVMs.add(deepCopyVM(safeHosts.get(i).getVirtualMachinesHosted().get(j)));
             }
         }
@@ -399,21 +399,21 @@ public class AllocatorAgent extends Agent {
             return bestDecision;
         } else {
             double bestStdDev = currentStdDev;
-            for (int i=0; i<currentVMs.size(); i++) {            
+            for (int i = 0; i < currentVMs.size(); i++) {
 //            for (VirtualMachineDescription vm : currentVMs) {
-                for (int j=0; j<safeHosts.size(); j++) {
+                for (int j = 0; j < safeHosts.size(); j++) {
 //                for (HostDescription host : safeHosts) {
                     if ((currentVMs.get(i).getNumberOfVirtualCores() <= safeHosts.get(j).getAvailableVirtualCores())
                             && (currentVMs.get(i).getMemory() <= safeHosts.get(j).getAvailableMemory())
                             && (!currentVMs.get(i).getOwnerId().trim().equals(safeHosts.get(j).getId().trim()))) {
 
-                        
+
                         HostDescription possiblySelectedDestinationHost = deepCopyHost(safeHosts.get(j));
 //                        System.out.println("possiblySelectedDestinationHost before "+ possiblySelectedDestinationHost);
                         possiblySelectedDestinationHost.getVirtualMachinesHosted().add(deepCopyVM(currentVMs.get(i)));
 //                        System.out.println("possiblySelectedDestinationHost after "+ possiblySelectedDestinationHost);
 //                        System.out.println("vm added " + vm);
-                        
+
                         HostDescription aHost = getDeepCopyOfHost(safeHosts, currentVMs.get(i).getOwnerId());
 //                        System.out.println("possiblySelectedSourceHost before "+ aHost);                        
                         HostDescription possiblySelectedSourceHost = removeVMfromHost(aHost, currentVMs.get(i).getId());
@@ -436,8 +436,8 @@ public class AllocatorAgent extends Agent {
                             //System.out.println(possiblySelectedSourceHost.getId()+ "==" +possiblySelectedDestinationHost.getId());
                             aBestDecisionFound = true;
                             bestStdDev = newStdDev;
-                            
-                                //  public Decision(HostDescription sourceHost, HostDescription destinationHost, VirtualMachineDescription selectedVM, int decision) {
+
+                            //  public Decision(HostDescription sourceHost, HostDescription destinationHost, VirtualMachineDescription selectedVM, int decision) {
                             bestDecision = new Decision(deepCopyHost(possiblySelectedSourceHost), deepCopyHost(possiblySelectedDestinationHost), deepCopyVM(currentVMs.get(i)), Consts.DECISION_TYPE_MIGRATE_FROM_A_TO_B);
                             bestDecision.getSelectedVM().setContainerName(possiblySelectedDestinationHost.getContainerName());
                             bestDecision.getSelectedVM().setPreviousOwnerId(possiblySelectedSourceHost.getId());
@@ -482,7 +482,7 @@ public class AllocatorAgent extends Agent {
         switch (loadBalancingCause) {
             case Consts.MIGRATION_CAUSE_VMWARE_JUST_CPU:
                 //System.out.println("ERROR 3 " +safeHosts);
-                if (safeHosts.size()>0) {
+                if (safeHosts.size() > 0) {
                     double minCPUUsage = 101;
                     double maxCPUUsage = -1;
                     for (HostDescription host : safeHosts) {
@@ -498,7 +498,7 @@ public class AllocatorAgent extends Agent {
                     //System.out.println("ERROR 4 " + sourceHost);
                     selectedVM = sourceHost.getVirtualMachinesHosted().get((new Random()).nextInt(sourceHost.getVirtualMachinesHosted().size()));// select a sourceHost's VM at random.                        
                     //System.out.println("ERROR 4.5 " + sourceHost);
-                    if (((selectedVM.getNumberOfVirtualCores() <= destinationHost.getAvailableVirtualCores()) && (selectedVM.getMemory() <= destinationHost.getAvailableMemory())) &&  (!sourceHost.getId().equals(destinationHost.getId()))  ) {
+                    if (((selectedVM.getNumberOfVirtualCores() <= destinationHost.getAvailableVirtualCores()) && (selectedVM.getMemory() <= destinationHost.getAvailableMemory())) && (!sourceHost.getId().equals(destinationHost.getId()))) {
                         decision = new Decision(sourceHost, destinationHost, selectedVM, Consts.DECISION_TYPE_MIGRATE_FROM_A_TO_B);
                         decision.getSelectedVM().setContainerName(destinationHost.getContainerName());
                         decision.getSelectedVM().setPreviousOwnerId(sourceHost.getId());
@@ -510,12 +510,12 @@ public class AllocatorAgent extends Agent {
                 } else {
                     decision.setDecision(-1); // meaning do not migrate                
                 }
-                    
+
                 //System.out.println("ERROR 5");
                 break;
 
             case Consts.MIGRATION_CAUSE_VMWARE_JUST_MEMORY:
-                if (safeHosts.size()>0) {
+                if (safeHosts.size() > 0) {
                     double minMemoryUsage = 101;
                     double maxMemoryUsage = -1;
                     //System.out.println("ERROR 6 " + safeHosts);
@@ -532,7 +532,7 @@ public class AllocatorAgent extends Agent {
                     //System.out.println("ERROR 7 " + sourceHost);
                     selectedVM = sourceHost.getVirtualMachinesHosted().get((new Random()).nextInt(sourceHost.getVirtualMachinesHosted().size()));// select a sourceHost's VM at random.                        
                     //System.out.println("ERROR 7.5 " + sourceHost);
-                    if (((selectedVM.getNumberOfVirtualCores() <= destinationHost.getAvailableVirtualCores()) && (selectedVM.getMemory() <= destinationHost.getAvailableMemory()))  &&  (!sourceHost.getId().equals(destinationHost.getId())) ) {
+                    if (((selectedVM.getNumberOfVirtualCores() <= destinationHost.getAvailableVirtualCores()) && (selectedVM.getMemory() <= destinationHost.getAvailableMemory())) && (!sourceHost.getId().equals(destinationHost.getId()))) {
                         decision = new Decision(sourceHost, destinationHost, selectedVM, Consts.DECISION_TYPE_MIGRATE_FROM_A_TO_B);
                         decision.getSelectedVM().setContainerName(destinationHost.getContainerName());
                         decision.getSelectedVM().setPreviousOwnerId(sourceHost.getId());
@@ -544,7 +544,7 @@ public class AllocatorAgent extends Agent {
                 } else {
                     decision.setDecision(-1); // meaning do not migrate                
                 }
-                    
+
                 //System.out.println("ERROR 8");
                 break;
         }
@@ -604,7 +604,7 @@ public class AllocatorAgent extends Agent {
                         if (Consts.EXCEPTIONS) {
                             e.printStackTrace();
                         }
-                    } 
+                    }
                     break;
 
                 case 2:
@@ -668,32 +668,32 @@ public class AllocatorAgent extends Agent {
                         if (!Consts.LOG) {
                             System.out.println("The source host agent did not respond and we have to call off the VM migration");
                         }
-                        
-                            try {
-                                ACLMessage msgRequestUnlockVM = new ACLMessage(ACLMessage.REQUEST);
-                                AID to = new AID(decision.getSourceHost().getId(), AID.ISLOCALNAME);
-                                msgRequestUnlockVM.setSender(agt.getAID());
-                                msgRequestUnlockVM.addReceiver(to);
-                                msgRequestUnlockVM.setConversationId(Consts.VMWARE_CONVERSATION_UNLOCK_VM);
-                                msgRequestUnlockVM.setContentObject((java.io.Serializable) decision.getSelectedVM());
-                                agt.send(msgRequestUnlockVM);
-                                
-                                // the destination host may have not beee able to respond however it was lock so I had to unlock it.
-                                ACLMessage msgRequestUnlockResources = new ACLMessage(ACLMessage.REQUEST);
-                                to = new AID(decision.getDestinationHost().getId(), AID.ISLOCALNAME);
-                                msgRequestUnlockResources.setSender(agt.getAID());
-                                msgRequestUnlockResources.addReceiver(to);
-                                msgRequestUnlockResources.setConversationId(Consts.VMWARE_CONVERSATION_UNLOCK_RESOURCES);
-                                msgRequestUnlockResources.setContentObject((java.io.Serializable) decision.getSelectedVM());
-                                agt.send(msgRequestUnlockResources);
-                                //System.out.println("HERE I AM 7");                                     
-                                
-                            } catch (IOException ex) {
-                                if (Consts.EXCEPTIONS) {
-                                    System.out.println(ex);
-                                }
+
+                        try {
+                            ACLMessage msgRequestUnlockVM = new ACLMessage(ACLMessage.REQUEST);
+                            AID to = new AID(decision.getSourceHost().getId(), AID.ISLOCALNAME);
+                            msgRequestUnlockVM.setSender(agt.getAID());
+                            msgRequestUnlockVM.addReceiver(to);
+                            msgRequestUnlockVM.setConversationId(Consts.VMWARE_CONVERSATION_UNLOCK_VM);
+                            msgRequestUnlockVM.setContentObject((java.io.Serializable) decision.getSelectedVM());
+                            agt.send(msgRequestUnlockVM);
+
+                            // the destination host may have not beee able to respond however it was lock so I had to unlock it.
+                            ACLMessage msgRequestUnlockResources = new ACLMessage(ACLMessage.REQUEST);
+                            to = new AID(decision.getDestinationHost().getId(), AID.ISLOCALNAME);
+                            msgRequestUnlockResources.setSender(agt.getAID());
+                            msgRequestUnlockResources.addReceiver(to);
+                            msgRequestUnlockResources.setConversationId(Consts.VMWARE_CONVERSATION_UNLOCK_RESOURCES);
+                            msgRequestUnlockResources.setContentObject((java.io.Serializable) decision.getSelectedVM());
+                            agt.send(msgRequestUnlockResources);
+                            //System.out.println("HERE I AM 7");
+
+                        } catch (IOException ex) {
+                            if (Consts.EXCEPTIONS) {
+                                System.out.println(ex);
                             }
-                            
+                        }
+
                         //System.out.println("HERE I AM 4");                                                        
                     }
                     break;
@@ -715,7 +715,7 @@ public class AllocatorAgent extends Agent {
                                     CPUThresholdViolated = false;
                                 } else if (loadBalancingCause == Consts.MIGRATION_CAUSE_VMWARE_JUST_MEMORY) {
                                     memoryThresholdViolated = false;
-                                }                                
+                                }
                             } catch (Exception e) {
                                 if (Consts.EXCEPTIONS) {
                                     System.out.println(e);
@@ -764,7 +764,7 @@ public class AllocatorAgent extends Agent {
                             System.out.println("The source destination host did not respond and we have to call off the VM migration");
                         }
                         try {
-                            
+
                             // I have to unlock both Resources at the destionatio host and the vm at the source host.
                             ACLMessage msgRequestUnlockResources = new ACLMessage(ACLMessage.REQUEST);
                             AID to = new AID(decision.getDestinationHost().getId(), AID.ISLOCALNAME);
@@ -774,7 +774,7 @@ public class AllocatorAgent extends Agent {
                             msgRequestUnlockResources.setContentObject((java.io.Serializable) decision.getSelectedVM());
                             agt.send(msgRequestUnlockResources);
                             //System.out.println("HERE I AM 7");      
-                            
+
                             ACLMessage msgRequestUnlockVM = new ACLMessage(ACLMessage.REQUEST);
                             to = new AID(decision.getSourceHost().getId(), AID.ISLOCALNAME);
                             msgRequestUnlockVM.setSender(agt.getAID());
@@ -783,10 +783,8 @@ public class AllocatorAgent extends Agent {
                             msgRequestUnlockVM.setContentObject((java.io.Serializable) decision.getSelectedVM());
                             agt.send(msgRequestUnlockVM);
                             //System.out.println("HERE I AM 6");                                                                                                                        
-                            
-                            
 
-              
+
                         } catch (IOException ex) {
                             if (Consts.EXCEPTIONS) {
                                 java.util.logging.Logger.getLogger(AllocatorAgent.class.getName()).log(Level.SEVERE, null, ex);

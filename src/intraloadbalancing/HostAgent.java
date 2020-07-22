@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.*;
 import java.io.IOException;
+
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -19,10 +20,10 @@ import jade.domain.FIPANames;
 import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 import jade.wrapper.ControllerException;
+
 import java.io.Serializable;
 
 /**
- *
  * @author JGUTIERRGARC
  */
 public class HostAgent extends Agent {
@@ -47,7 +48,10 @@ public class HostAgent extends Agent {
 
     private HashSet<weightEdge> edges;
     private Utilities utils;
-    transient protected HostAgentGUI hostAgentGUI; // Reference to the gui    
+    transient protected HostAgentGUI hostAgentGUI; // Reference to the gui
+
+    private int currentTick; // this is to keep track of the time window when Consts.MIGRATION_TRIGGER_TYPE == Consts.MIGRATION_TRIGGER_BASED_ON_AVERAGE_USAGE
+
 
     public HostAgent() {
         lastCPUUsages = new double[Consts.TIME_WINDOW_IN_TERMS_OF_REPORTING_RATE];
@@ -60,25 +64,26 @@ public class HostAgent extends Agent {
         coalitionLeaders = new ArrayList<HostDescription>();
         edges = new HashSet<weightEdge>();
         resetCounters();
-        resetThresholds();
+        resetThresholdFlags();
         conversationId = 0;
     }
 
-    double getDistance(String source, String destination){
-        if (source.equals(destination)){
+    double getDistance(String source, String destination) {
+        if (source.equals(destination)) {
             return 0;
         }
-        Iterator<weightEdge> i = edges.iterator(); 
+        Iterator<weightEdge> i = edges.iterator();
         while (i.hasNext()) {
-                weightEdge edge = i.next();
-                String in = "HostAgent"+edge.getInNode();
-                String out = "HostAgent"+edge.getOutNode();
-                if ( (in.equals(source) && out.equals(destination)) ||
-                   (in.equals(destination) && out.equals(source)) )
-                    return edge.getDistance();
+            weightEdge edge = i.next();
+            String in = "HostAgent" + edge.getInNode();
+            String out = "HostAgent" + edge.getOutNode();
+            if ((in.equals(source) && out.equals(destination)) ||
+                    (in.equals(destination) && out.equals(source)))
+                return edge.getDistance();
         }
         return -1;
     }
+
     @Override
     protected void setup() {
         try {
@@ -90,12 +95,19 @@ public class HostAgent extends Agent {
             //System.out.println("Mem "+ hostDescription.getAvailableMemory());
             coalitionMembers = (ArrayList<String>) args[1];
             coalitionLeaders = (ArrayList<HostDescription>) args[2];
-            edges = (HashSet)(args[4]);            
-            
+
+
+            //for (int i=0; i<coalitionLeaders.size(); i++){
+            //   System.out.println(hostDescription.getId()+"-"+coalitionLeaders.get(i).getId()+"-"+hostDescription.getCoalition()+ hostDescription.isLeader());
+            //}
+
+
+            edges = (HashSet) (args[4]);
+
 //            for (int i=0; i<coalitionMembers.size(); i++){
 //                System.out.println(hostDescription.getId()+"-"+coalitionMembers.get(i)+ ":" + getDistance(hostDescription.getId(),coalitionMembers.get(i)));
 //            }
-     
+
 //            System.out.println(hostDescription.getId()+" - NeighborsDistance -> ");            
 //            Hashtable neighborsDistance = (Hashtable) args[5];
 //            Enumeration<String> enumeration = neighborsDistance.keys();
@@ -120,6 +132,16 @@ public class HostAgent extends Agent {
             if (Consts.LOAD_BALANCING_TYPE == Consts.INTRA_DISTRIBUTED_FIXED_COALITIONS) {
                 addBehaviour(new CNPParticipantForIntraLoadBalancingAtoB(this)); // the agent always listens for potential requests for Intra Load Balancing from A (this source host) to B (a destination host).
                 addBehaviour(new CNPParticipantForIntraLoadBalancingBtoA(this)); // the agent always listens for potential requests for Intra Load Balancing from B (an external host) to A (this destination host).
+
+                //if (    (Integer.valueOf(coalitionLeaders.get(i).getId()) != hostDescription.getCoalition())
+                if (Consts.BALANCING_ONLY_ONE_COALITION_AT_A_TIME && (Consts.LOAD_BALANCING_TYPE == Consts.INTRA_DISTRIBUTED_FIXED_COALITIONS)) {
+                    if (hostDescription.isLeader())
+                        addBehaviour(new LeaderListenerForCounterReset(this));
+                    else
+                        addBehaviour(new MemberListenerForCounterReset(this));
+                }
+
+
             } else if (Consts.LOAD_BALANCING_TYPE == Consts.VMWARE_CENTRALIZED_WITH_NO_COALITIONS) {
                 addBehaviour(new VMWARE_RemoveAndMigrateVM(this));
                 addBehaviour(new VMWARE_LockVM(this));
@@ -133,7 +155,7 @@ public class HostAgent extends Agent {
             // Behaviours required for any balancing type.
             addBehaviour(new ListenerForVMMigrations(this));
             addBehaviour(new RequestsReceiver(this));
-            addBehaviour(new PerformanceReporterAndThresholdMonitoring(this, Consts.HOST_REPORTING_RATE + new Random().nextInt((int) Consts.RANGE_OF_RANDOM_TICKS))); // Added a random number to prevent colitions among host agents when enacting interactions protocols.              
+            addBehaviour(new PerformanceReporterAndThresholdMonitoring(this, Consts.HOST_REPORTING_RATE + new Random().nextInt((int) Consts.RANGE_OF_RANDOM_TICKS))); // Added a random number to prevent colitions among host agents when enacting interactions protocols.
             addBehaviour(new VirtualMachineKiller(this, (long) (Consts.AVG_INTERDEPARTURE_TIME * (-Math.log(Math.random())))));
             addBehaviour(new MonitorListener(this));
 
@@ -143,8 +165,118 @@ public class HostAgent extends Agent {
 //            System.out.println(this.hostDescription);
         } catch (Exception ex) {
             if (Consts.EXCEPTIONS) {
-                System.out.println("It is here 8 "+ ex);
+                System.out.println("It is here 8 " + ex);
             }
+        }
+    }
+
+
+    private class LeaderListenerForCounterReset extends CyclicBehaviour {
+
+        private Agent agt;
+        private MessageTemplate mt;
+
+        public LeaderListenerForCounterReset(Agent agt) {
+            this.agt = agt;
+            this.mt = MessageTemplate.MatchConversationId(Consts.CONVERSATION_A_COALITION_WAS_JUST_BALANCED);
+        }
+
+        @Override
+        public void action() {
+            ACLMessage initialMsg = receive(mt);
+            if (initialMsg == null) {
+                block();
+                return;
+            }
+            try {
+                resetAverageUsages();
+                resetCounters();
+                //System.out.println(hostDescription.getId()+"- I have to notify my members");
+                // send a message to all coalitions members
+
+                ACLMessage finalMsg = new ACLMessage(ACLMessage.REQUEST);
+                AID to = new AID(hostDescription.getId(), AID.ISLOCALNAME);
+                finalMsg.setSender(agt.getAID());
+                for (int i = 0; i < coalitionMembers.size(); i++) { // notify all the leaders (except my own leader) that a coalition has been balanced
+                    if (!coalitionMembers.get(i).equals(hostDescription.getId())) {
+                        finalMsg.addReceiver(new AID(coalitionMembers.get(i), AID.ISLOCALNAME));
+                    }
+                }
+                finalMsg.setConversationId(Consts.CONVERSATION_RESET_COUNTERS);
+                finalMsg.setContent("nothing relevant");
+                //System.out.println(hostDescription.getId()+"- membersNotified");
+                agt.send(finalMsg);
+
+
+            } catch (Exception ex) {
+                if (Consts.EXCEPTIONS) {
+                    System.out.println(ex);
+                }
+            }
+        }
+    }
+
+    private class MemberListenerForCounterReset extends CyclicBehaviour {
+
+        private Agent agt;
+        private MessageTemplate mt;
+
+        public MemberListenerForCounterReset(Agent agt) {
+            this.agt = agt;
+            this.mt = MessageTemplate.MatchConversationId(Consts.CONVERSATION_RESET_COUNTERS);
+        }
+
+        @Override
+        public void action() {
+            ACLMessage msg = receive(mt);
+            if (msg == null) {
+                block();
+                return;
+            }
+            try {
+                resetAverageUsages();
+                resetCounters();
+                //System.out.println(hostDescription.getId()+"- I just reset my counters"+ hostDescription.getCoalition());
+            } catch (Exception ex) {
+                if (Consts.EXCEPTIONS) {
+                    System.out.println(ex);
+                }
+            }
+        }
+    }
+
+    private class ResetDatacenterLoadBalancingCounters extends OneShotBehaviour {
+
+        private Agent agt;
+
+        public ResetDatacenterLoadBalancingCounters(Agent agt) {
+            super(null);
+            this.agt = agt;
+        }
+
+        @Override
+        public void action() {
+            try {
+
+                ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                AID to = new AID(hostDescription.getId(), AID.ISLOCALNAME);
+                msg.setSender(agt.getAID());
+                for (int i = 0; i < coalitionLeaders.size(); i++) { // notify all the leaders (except my own leader) that a coalition has been balanced
+                    if (!coalitionLeaders.get(i).getId().equals("HostAgent" + hostDescription.getCoalition())) {
+                        msg.addReceiver(new AID(coalitionLeaders.get(i).getId(), AID.ISLOCALNAME));
+                    }
+                }
+                msg.setConversationId(Consts.CONVERSATION_A_COALITION_WAS_JUST_BALANCED);
+                msg.setContent("nothing relevant");
+                //System.out.println(hostDescription.getId()+"- notifying leaders that I have migrated a VM");
+                agt.send(msg);
+            } catch (Exception ex) {
+                if (Consts.EXCEPTIONS) {
+                    System.out.println(ex);
+                }
+            }
+
+
         }
     }
 
@@ -175,7 +307,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 9"+ex);
+                        System.out.println("It is here 9" + ex);
                     }
                 }
             }
@@ -231,7 +363,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 10"+ex);
+                        System.out.println("It is here 10" + ex);
                     }
                     hostDescription.setInProgress(false);
                 }
@@ -290,7 +422,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 11"+ex);
+                        System.out.println("It is here 11" + ex);
                     }
                     hostDescription.setInProgress(false);
                 }
@@ -330,7 +462,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 12"+ex);
+                        System.out.println("It is here 12" + ex);
                     }
                 }
             }
@@ -367,7 +499,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 13"+ex);
+                        System.out.println("It is here 13" + ex);
                     }
                 }
             }
@@ -375,13 +507,14 @@ public class HostAgent extends Agent {
     }
 
     private void resetAverageUsages() {
+        currentTick = -1;
         for (int i = 0; i < lastCPUUsages.length; i++) {
             lastCPUUsages[i] = 0;
             lastMemoryUsages[i] = 0;
         }
     }
 
-    private void resetThresholds() {
+    private void resetThresholdFlags() {
         highCPUThresholdViolated = false;
         lowCPUThresholdViolated = false;
         highMemoryThresholdViolated = false;
@@ -430,7 +563,7 @@ public class HostAgent extends Agent {
                                         + ", \"destination\":\"" + vm.getOwnerId() + "\""
                                         + //                                                                    ", \"who prints\":\""+ hostDescription.getId()+"\"" +                                                                            
                                         ", \"vmid\":\"" + vm.getId() + "\""
-                                        + ", \"distance\":" + getDistance(vm.getPreviousOwnerId(),vm.getOwnerId())
+                                        + ", \"distance\":" + getDistance(vm.getPreviousOwnerId(), vm.getOwnerId())
                                         + ", \"time\":" + System.currentTimeMillis()
                                         + "}");
                                 //}
@@ -443,11 +576,11 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 14" +ex);
+                        System.out.println("It is here 14" + ex);
                     }
                 }
                 resetCounters();
-                resetThresholds();
+                resetThresholdFlags();
                 hostDescription.setInProgress(false);
             }
             //}
@@ -508,7 +641,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 16"+ex);
+                        System.out.println("It is here 16" + ex);
                     }
                 }
                 hostDescription.setInProgress(false);
@@ -570,7 +703,7 @@ public class HostAgent extends Agent {
                     }
                 } catch (Exception ex) {
                     if (Consts.EXCEPTIONS) {
-                        System.out.println("It is here 17"+ex);
+                        System.out.println("It is here 17" + ex);
                     }
                 }
                 hostDescription.setInProgress(false);
@@ -606,7 +739,7 @@ public class HostAgent extends Agent {
                 }
             } catch (Exception ex) {
                 if (Consts.EXCEPTIONS) {
-                    System.out.println("It is here 18"+ex);
+                    System.out.println("It is here 18" + ex);
                 }
             }
 
@@ -625,7 +758,7 @@ public class HostAgent extends Agent {
 
         } catch (Exception ex) {
             if (Consts.EXCEPTIONS) {
-                System.out.println("It is here 19"+ex);
+                System.out.println("It is here 19" + ex);
             }
         }
     }
@@ -693,7 +826,7 @@ public class HostAgent extends Agent {
                 }
                 terminated = true;
                 resetCounters();
-                resetThresholds();
+                resetThresholdFlags();
                 hostDescription.setInProgress(false);
             }
         }
@@ -732,7 +865,7 @@ public class HostAgent extends Agent {
                         vm.setContainerName(this.getContainerController().getContainerName());
                     } catch (Exception ex) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 20" +ex);
+                            System.out.println("It is here 20" + ex);
                         }
                     }
                     vm.setPreviousOwnerId(hostDescription.getId());
@@ -752,7 +885,7 @@ public class HostAgent extends Agent {
                         vm.setContainerName(this.getContainerController().getContainerName());
                     } catch (Exception e) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 21"+e);
+                            System.out.println("It is here 21" + e);
                         }
                     }
                     hostDescription.getVirtualMachinesHosted().add(vm);
@@ -781,7 +914,7 @@ public class HostAgent extends Agent {
                         return true; // success
                     } catch (Exception e) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 22"+e);
+                            System.out.println("It is here 22" + e);
                         }
                     }
                 }
@@ -809,12 +942,12 @@ public class HostAgent extends Agent {
                             System.out.println(hostDescription.getId() + " at " + this.getContainerController().getContainerName() + " migrated " + vm.getVirtualMachineId() + " to " + vm.getOwnerId() + " at " + vm.getContainerName());
                         }
                         resetCounters();
-                        resetThresholds();
+                        resetThresholdFlags();
                         hostDescription.setInProgress(false);
                         return true; // success
                     } catch (Exception e) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 23"+e);
+                            System.out.println("It is here 23" + e);
                         }
                     }
                 } else {
@@ -822,7 +955,7 @@ public class HostAgent extends Agent {
                         System.out.println("Error: failure to remove VM prior to migrate it to other host");
                     }
                     resetCounters();
-                    resetThresholds();
+                    resetThresholdFlags();
                     hostDescription.setInProgress(false);
                 }
                 return false; // failed
@@ -840,7 +973,6 @@ public class HostAgent extends Agent {
     private class PerformanceReporterAndThresholdMonitoring extends TickerBehaviour {
 
         private Agent agt;
-        private int currentTick; // this is to keep track of the time window when Consts.MIGRATION_TRIGGER_TYPE == Consts.MIGRATION_TRIGGER_BASED_ON_AVERAGE_USAGE
 
         public PerformanceReporterAndThresholdMonitoring(Agent agt, long period) {
             super(agt, period);
@@ -858,7 +990,6 @@ public class HostAgent extends Agent {
                 msg.setConversationId(Consts.CONVERSATION_MONITOR_HOST);
                 msg.setContentObject((java.io.Serializable) hostDescription);
                 send(msg);
-
                 if (Consts.LOAD_BALANCING_TYPE == Consts.INTRA_DISTRIBUTED_FIXED_COALITIONS) {
 
                     if (Consts.MIGRATION_TRIGGER_TYPE == Consts.MIGRATION_TRIGGER_BASED_ON_COUNTERS) {
@@ -972,7 +1103,7 @@ public class HostAgent extends Agent {
 
             } catch (Exception ex) {
                 if (Consts.EXCEPTIONS) {
-                    System.out.println("It is here 24"+ex);
+                    System.out.println("It is here 24" + ex);
                 }
             }
 
@@ -1007,7 +1138,7 @@ public class HostAgent extends Agent {
                 }
             } catch (Exception ex) {
                 if (Consts.EXCEPTIONS) {
-                    System.out.println("It is here 25"+ex);
+                    System.out.println("It is here 25" + ex);
                 }
             }
         }
@@ -1037,7 +1168,7 @@ public class HostAgent extends Agent {
                 }
             } catch (UnreadableException ex) {
                 if (Consts.EXCEPTIONS) {
-                    System.out.println("It is here 26"+ex);
+                    System.out.println("It is here 26" + ex);
                 }
             }
         }
@@ -1069,7 +1200,7 @@ public class HostAgent extends Agent {
         return thresholds;
     }
 
-/// BEGIN WORKING ON DANIEL
+    /// BEGIN WORKING ON DANIEL
     /// aquí modifica Daniel
 // Vector responses is a vector of <ACLMessage>. It can be iterated using an enumeration object -> Enumeration e = responses.elements()
 // Each ACLMessage contains a host description including its virtual machines. To access message content:
@@ -1151,7 +1282,8 @@ public class HostAgent extends Agent {
         }
         return null; // if no agent was selected for any reason return a null host description. This will reject all the participant agents' proposals. 
     }
-/// END     WORKING ON DANIEL
+
+    /// END     WORKING ON DANIEL
 /*
     private Decision selectHostAgentBasedOnCoalitionUtility(Vector responses, int loadBalancingCause) {
         try {
@@ -1285,7 +1417,6 @@ public class HostAgent extends Agent {
                     }
                 }
 
-                
 
                 callForProposalsForLoadBalancing.setSender(agt.getAID());
                 callForProposalsForLoadBalancing.setConversationId(Consts.CONVERSATION_INTRA_LOAD_BALANCING_A_TO_B);
@@ -1375,7 +1506,7 @@ public class HostAgent extends Agent {
                                                     }
                                                 } catch (Exception ex) {
                                                     if (Consts.EXCEPTIONS) {
-                                                        System.out.println("It is here 27"+ex);
+                                                        System.out.println("It is here 27" + ex);
                                                     }
                                                 }
                                             } else {
@@ -1388,7 +1519,7 @@ public class HostAgent extends Agent {
                                                     acceptances.addElement(reply);
                                                 } catch (IOException ex) {
                                                     if (Consts.EXCEPTIONS) {
-                                                        System.out.println("Is it here 2"+ex);
+                                                        System.out.println("Is it here 2" + ex);
                                                     }
                                                 }
                                             }
@@ -1415,7 +1546,7 @@ public class HostAgent extends Agent {
                                     // enact inter load balancing protocol 
                                 } else { //if inter load balancing is not enabled then just clean up and reset thresholds
                                     resetCounters();
-                                    resetThresholds();
+                                    resetThresholdFlags();
                                     hostDescription.setInProgress(false);
                                 }
                             }
@@ -1424,7 +1555,7 @@ public class HostAgent extends Agent {
                                 System.out.println("No agent replied to cfp. Load balancing cause " + loadBalancingCause);
                             }
                             resetCounters();
-                            resetThresholds();
+                            resetThresholdFlags();
                             hostDescription.setInProgress(false);
                         }
 
@@ -1441,12 +1572,17 @@ public class HostAgent extends Agent {
                             decision.getSelectedVM().setPreviousOwnerId(hostDescription.getId());
                             decision.getSelectedVM().setOwnerId(inform.getSender().getLocalName());
                             operationOverVM(decision.getSelectedVM(), "removeAndMigrate", "AtoB");
+                            if (Consts.BALANCING_ONLY_ONE_COALITION_AT_A_TIME && (Consts.LOAD_BALANCING_TYPE == Consts.INTRA_DISTRIBUTED_FIXED_COALITIONS))
+                                agt.addBehaviour(new ResetDatacenterLoadBalancingCounters(agt));
+                            resetAverageUsages();
+                            resetCounters();
+                            resetThresholdFlags();
                         } else {
                             if (!Consts.LOG) {
                                 System.out.println("ERROR: Unknown load balancing cause");
                             }
                             resetCounters();
-                            resetThresholds();
+                            resetThresholdFlags();
                             hostDescription.setInProgress(false);
                         }
 
@@ -1456,7 +1592,7 @@ public class HostAgent extends Agent {
 
             } catch (Exception ex) {
                 if (Consts.EXCEPTIONS) {
-                    System.out.println("It is here"+ex);
+                    System.out.println("It is here" + ex);
                 }
             }
 
@@ -1581,7 +1717,7 @@ public class HostAgent extends Agent {
                                                     }
                                                 } catch (IOException ex) {
                                                     if (Consts.EXCEPTIONS) {
-                                                        System.out.println("It is here 28"+ex);
+                                                        System.out.println("It is here 28" + ex);
                                                     }
                                                 }
                                             } else {
@@ -1594,7 +1730,7 @@ public class HostAgent extends Agent {
                                                     acceptances.addElement(reply);
                                                 } catch (Exception ex) {
                                                     if (Consts.EXCEPTIONS) {
-                                                        System.out.println("It is here 29"+ex);
+                                                        System.out.println("It is here 29" + ex);
                                                     }
                                                 }
                                             }
@@ -1616,7 +1752,7 @@ public class HostAgent extends Agent {
                                     System.out.println("The decision was " + decision.getDecision());
                                 }
                                 resetCounters();
-                                resetThresholds();
+                                resetThresholdFlags();
                                 hostDescription.setInProgress(false);
                             }
                         } else { // if no agent replied to the cfp, unlock vm 
@@ -1624,7 +1760,7 @@ public class HostAgent extends Agent {
                                 System.out.println("No agent replied to cfp. Load balancing cause " + loadBalancingCause);
                             }
                             resetCounters();
-                            resetThresholds();
+                            resetThresholdFlags();
                             hostDescription.setInProgress(false);
                         }
 
@@ -1642,7 +1778,7 @@ public class HostAgent extends Agent {
                                 System.out.println("ERROR: Unknown load balancing cause");
                             }
                             resetCounters();
-                            resetThresholds();
+                            resetThresholdFlags();
                             hostDescription.setInProgress(false);
                         }
 
@@ -1652,7 +1788,7 @@ public class HostAgent extends Agent {
 
             } catch (Exception ex) {
                 if (Consts.EXCEPTIONS) {
-                    System.out.println("It is here 30"+ex);
+                    System.out.println("It is here 30" + ex);
                 }
             }
 
@@ -1705,6 +1841,11 @@ public class HostAgent extends Agent {
                         decision.getSelectedVM().setPreviousOwnerId(hostDescription.getId());
                         decision.getSelectedVM().setOwnerId(accept.getSender().getLocalName());
                         operationOverVM(decision.getSelectedVM(), "removeAndMigrate", "BtoA");
+                        if (Consts.BALANCING_ONLY_ONE_COALITION_AT_A_TIME && (Consts.LOAD_BALANCING_TYPE == Consts.INTRA_DISTRIBUTED_FIXED_COALITIONS))
+                            agt.addBehaviour(new ResetDatacenterLoadBalancingCounters(agt));
+                        resetAverageUsages();
+                        resetCounters();
+                        resetThresholdFlags();
 
                         if (!Consts.LOG) {
                             System.out.println("I " + agt.getAID() + " updated his migration thresholds because of acceptance BtoA");
@@ -1716,7 +1857,7 @@ public class HostAgent extends Agent {
 
                     } catch (Exception ex) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 31"+ex);
+                            System.out.println("It is here 31" + ex);
                         }
                     }
                     return inform;
@@ -1738,11 +1879,11 @@ public class HostAgent extends Agent {
                             System.out.println("Agent " + getLocalName() + " got proposal rejected");
                         }
                         resetCounters();
-                        resetThresholds();
+                        resetThresholdFlags();
                         hostDescription.setInProgress(false); // if proposal rejected release the agent so it can participate in other CNPs
                     } catch (Exception ex) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 32"+ex);
+                            System.out.println("It is here 32" + ex);
                         }
                     }
                 }
@@ -1799,7 +1940,7 @@ public class HostAgent extends Agent {
                         }
                     } catch (Exception ex) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 4: "+ex);
+                            System.out.println("It is here 4: " + ex);
                         }
                     }
                     return inform;
@@ -1820,11 +1961,11 @@ public class HostAgent extends Agent {
                             System.out.println("Agent " + getLocalName() + " got proposal rejected");
                         }
                         resetCounters();
-                        resetThresholds();
+                        resetThresholdFlags();
                         hostDescription.setInProgress(false); // if proposal rejected release the agent so it can participate in other CNPs
                     } catch (Exception ex) {
                         if (Consts.EXCEPTIONS) {
-                            System.out.println("It is here 5: "+ex);
+                            System.out.println("It is here 5: " + ex);
                         }
                     }
                 }
@@ -1846,7 +1987,7 @@ public class HostAgent extends Agent {
             result.setContentObject(hostDescription);
         } catch (Exception ex) {
             if (Consts.EXCEPTIONS) {
-                System.out.println("Is it here 6"+ex);
+                System.out.println("Is it here 6" + ex);
             }
         }
         return result;

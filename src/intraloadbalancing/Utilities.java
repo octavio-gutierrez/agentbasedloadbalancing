@@ -11,6 +11,7 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
+
 import java.io.File;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -18,7 +19,6 @@ import java.util.logging.Logger;
 
 
 /**
- *
  * @author octavio
  */
 public class Utilities {

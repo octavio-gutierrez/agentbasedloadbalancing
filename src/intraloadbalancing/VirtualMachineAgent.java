@@ -5,6 +5,7 @@
 package intraloadbalancing;
 
 import static intraloadbalancing.Consts.VMWARE_CENTRALIZED_WITH_NO_COALITIONS;
+
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.ContainerID;
@@ -15,7 +16,6 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 /**
- *
  * @author octavio
  */
 public class VirtualMachineAgent extends Agent {
@@ -24,12 +24,12 @@ public class VirtualMachineAgent extends Agent {
     private boolean reportToOwner;
 
     private final double[] muCPUUsageLongTermMean = {Consts.LOW_LONGTERM_MEAN_FOR_CPU_USAGE,
-        Consts.MEDIUM_LONGTERM_MEAN_FOR_CPU_USAGE,
-        Consts.HIGH_LONGTERM_MEAN_FOR_CPU_USAGE};
+            Consts.MEDIUM_LONGTERM_MEAN_FOR_CPU_USAGE,
+            Consts.HIGH_LONGTERM_MEAN_FOR_CPU_USAGE};
 
     private final double[] muMemoryUsageyLongTermMean = {Consts.LOW_LONGTERM_MEAN_FOR_MEMORY_USAGE,
-        Consts.MEDIUM_LONGTERM_MEAN_FOR_MEMORY_USAGE,
-        Consts.HIGH_LONGTERM_MEAN_FOR_MEMORY_USAGE};
+            Consts.MEDIUM_LONGTERM_MEAN_FOR_MEMORY_USAGE,
+            Consts.HIGH_LONGTERM_MEAN_FOR_MEMORY_USAGE};
 
     private double currentCPUUsage;
 
@@ -148,7 +148,8 @@ public class VirtualMachineAgent extends Agent {
                 msg.setConversationId(Consts.CONVERSATION_REGISTRATION_DUE_TO_VM_MIGRATION);
                 msg.setContentObject((java.io.Serializable) virtualMachineDescription);
                 send(msg);
-                if (!Consts.LOG) System.out.println(agt.getAID().getLocalName() + " sent message to " + virtualMachineDescription.getOwnerId() + " for registration");
+                if (!Consts.LOG)
+                    System.out.println(agt.getAID().getLocalName() + " sent message to " + virtualMachineDescription.getOwnerId() + " for registration");
             } catch (Exception e) {
                 if (!Consts.EXCEPTIONS) System.out.println(e);
             }
@@ -180,10 +181,11 @@ public class VirtualMachineAgent extends Agent {
                 if (msg.getPerformative() == ACLMessage.REQUEST) {
                     virtualMachineDescription.setPreviousOwnerId(vm.getPreviousOwnerId());
                     virtualMachineDescription.setOwnerId(vm.getOwnerId());
-                    if (!Consts.LOG) System.out.println("NEW VMA's MIGRATION CODE to " + vm.getContainerName().trim() + " with " + vm.getOwnerId());
+                    if (!Consts.LOG)
+                        System.out.println("NEW VMA's MIGRATION CODE to " + vm.getContainerName().trim() + " with " + vm.getOwnerId());
 //                    System.out.println("NEW VMA's MIGRATION CODE to " + vm.getContainerName().trim() + " with " + vm.getOwnerId());
                     virtualMachineDescription.setMigrationType(vm.getMigrationType());
-                    
+
                     agt.doMove(new ContainerID(vm.getContainerName().trim(), null));
                 }
             } catch (Exception ex) {

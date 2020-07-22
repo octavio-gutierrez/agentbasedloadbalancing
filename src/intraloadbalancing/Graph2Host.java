@@ -128,8 +128,8 @@ public class Graph2Host {
     }
 
     /*
-	 * Function to create the hosts traversing the graph 3rd Jun 2020
-	 * **/
+     * Function to create the hosts traversing the graph 3rd Jun 2020
+     * **/
     public ArrayList<HashSet<String>> getCoalitions() {
         return this.SetCoalitions;
     }
@@ -163,21 +163,21 @@ public class Graph2Host {
             //System.out.println("Host:");
             HostAgent xHost;
             // leader= true if coalition is equal to itself verify
-                        
-            
-            double randomNumber =new Random().nextGaussian()*(Consts.HOST_OPTIONS.length/2-1)+(Consts.HOST_OPTIONS.length/2-1);
 
-            if (randomNumber<0) {
-                randomNumber=0;
-            } else if (randomNumber>(Consts.HOST_OPTIONS.length-1)){
-                randomNumber=Consts.HOST_OPTIONS.length-1;
+
+            double randomNumber = new Random().nextGaussian() * (Consts.HOST_OPTIONS.length / 2 - 1) + (Consts.HOST_OPTIONS.length / 2 - 1);
+
+            if (randomNumber < 0) {
+                randomNumber = 0;
+            } else if (randomNumber > (Consts.HOST_OPTIONS.length - 1)) {
+                randomNumber = Consts.HOST_OPTIONS.length - 1;
             }
-            int hostOption = (int)Math.round(randomNumber);
-            int[] hostSpecs =  Consts.HOST_OPTIONS[hostOption];
+            int hostOption = (int) Math.round(randomNumber);
+            int[] hostSpecs = Consts.HOST_OPTIONS[hostOption];
             HostDescription H = new HostDescription(isLeader, "HostAgent" + strID,
                     xxCoalition,
-                    0.0, 
-                    0.0, 
+                    0.0,
+                    0.0,
                     hostSpecs[1],//xxMEM,
                     0.0,
                     hostSpecs[0],//xxCPU,
@@ -205,7 +205,7 @@ public class Graph2Host {
                 int InOutVertexID = Integer.valueOf(StrOutVertexID);
                 long xWeight = (Long) edge.getProperty("weight");
                 int yyCoalition = (Integer) neighborsCoalition.get(StrOutVertexID);
-                
+
                 if (xxCoalition == yyCoalition) {
                     //addNeighborDistance(StrOutVertexID,xWeight); //In case only the distance to neighbors of the same coalition are required
                     this.membersOfCoalition.add(StrOutVertexID);

@@ -6,9 +6,9 @@
 package intraloadbalancing;
 
 /**
- *
  * @author octavio
  */
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,19 +33,19 @@ public class IntraLoadBalancing {
         ArrayList<String> coalition = new ArrayList<String>();
         int hostCoalitionNumber = 0;
         for (int coalitionNumber = 0; coalitionNumber < setCoalitions.size(); coalitionNumber++) {
-                HashSet<String> s = setCoalitions.get(coalitionNumber);
-                Iterator<String> i = s.iterator();
-                while (i.hasNext()) {
-                    if (hostId.equals(i.next())) {
-                        hostCoalitionNumber=coalitionNumber;
-                    }
+            HashSet<String> s = setCoalitions.get(coalitionNumber);
+            Iterator<String> i = s.iterator();
+            while (i.hasNext()) {
+                if (hostId.equals(i.next())) {
+                    hostCoalitionNumber = coalitionNumber;
                 }
+            }
         }
         HashSet<String> s = setCoalitions.get(hostCoalitionNumber);
         Iterator<String> i = s.iterator();
         while (i.hasNext()) {
-           String host = "HostAgent"+i.next();
-           coalition.add(host.trim());
+            String host = "HostAgent" + i.next();
+            coalition.add(host.trim());
         }
         //System.out.println(coalition);
         return coalition;
@@ -55,7 +55,7 @@ public class IntraLoadBalancing {
 
 
         try {
-            
+
             // Logging experiment's output in a file.
             // Logging experiment's output in a file.
             // Logging experiment's output in a file.
@@ -97,7 +97,7 @@ public class IntraLoadBalancing {
 //                }
 //                System.out.println("]");
 //            }
-            
+
 
             // mainBasicServicesContainer is the main container and contains the agent DirectoryFacilitator among other services
             jade.wrapper.AgentContainer mainBasicServicesContainer;
@@ -156,20 +156,20 @@ public class IntraLoadBalancing {
             ArrayList<HostDescription> hostDescriptions = new ArrayList<HostDescription>();
 
             //Starting basic agents for debugging 
-            
+
             //mainBasicServicesContainer.createNewAgent("sniffer", "jade.tools.sniffer.Sniffer", null);
             //mainBasicServicesContainer.getAgent("sniffer").start();
             //mainBasicServicesContainer.createNewAgent("RMA", "jade.tools.rma.rma", null);
             //mainBasicServicesContainer.getAgent("RMA").start();
-            
-            
+
+
             dataCenterStructure = graphStructure.getHostsAndNeighbors();
             hostDescriptions = graphStructure.getHosts();
             HashSet<weightEdge> listEdges = graphStructure.getListEdges();
 
             Object[] allocatorAgentParams = new Object[2];
             ArrayList<HostDescription> xLeaders = graphStructure.getLeaders();
-            
+
             allocatorAgentParams[0] = hostDescriptions;
             allocatorAgentParams[1] = xLeaders; // leaders identifies the coalition members of its own coalition
             // Starting allocator agent
@@ -190,7 +190,7 @@ public class IntraLoadBalancing {
                 hostAgentParams[3] = setCoalitions.get(posCoalition);
                 hostAgentParams[4] = listEdges;
                 hostAgentParams[5] = neighborsDistance;
-                
+
                 hostContainers[i].createNewAgent(xHost.getId(), "intraloadbalancing.HostAgent", hostAgentParams);
                 hostContainers[i].getAgent(xHost.getId()).start();
             }
