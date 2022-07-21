@@ -6,7 +6,7 @@ The list of input arguments of the agent-based testbed are as follows:
 
 * arg 0: Id of experiment run. Default value: 0
     
-* arg 1: Name of a datacenter file in GraphML file format containing the datacenter’s topology and number of hosts. Default value: big_fat_tree_datacenterCoalitions4_4.xml. 
+* arg 1: Name of a datacenter file in a GraphML file format containing the datacenter’s topology and number of hosts. Default value: big_fat_tree_datacenterCoalitions4_4.xml. 
 
 * arg 2: A target standard deviation. Default value: 7.	
 
