@@ -1,13 +1,12 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * Agent-based testbed described and evaluated in
+ * J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado, "Agent Coalitions for Load Balancing in Cloud Data Centers",
+ * Journal of Parallel and Distributed Computing, 2022.
  */
-package intraloadbalancing;
-
-import java.util.Comparator;
+package agentbasedloadbalancing;
 
 /**
- * @author octavio
+ * @author J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado
  */
 class VirtualMachineDescription implements java.io.Serializable, Comparable<VirtualMachineDescription> {
 
@@ -27,7 +26,6 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
     private String migrationType; //AtoB or BtoA
     private int migrationCause;
     private int coalition;
-
 
     public VirtualMachineDescription() {
         this.lock = false;
@@ -216,16 +214,7 @@ class VirtualMachineDescription implements java.io.Serializable, Comparable<Virt
 
     @Override
     public String toString() {
-        return "lock=" + lock
-                + ", id=" + id
-                + ", virtualCores=" + numberOfVirtualCores
-                + ", CPUUsage=" + String.format("%.2f", CPUUsage)
-                + ", CPUProfile=" + CPUProfile
-                + ", mem=" + memory
-                + ", memUsage=" + String.format("%.2f", memoryUsage)
-                + ", memProfile=" + memoryProfile
-                + ", container=" + containerName;
-
+        return "lock=" + lock + ", id=" + id + ", virtualCores=" + numberOfVirtualCores + ", CPUUsage=" + String.format("%.2f", CPUUsage) + ", CPUProfile=" + CPUProfile + ", mem=" + memory + ", memUsage=" + String.format("%.2f", memoryUsage) + ", memProfile=" + memoryProfile + ", container=" + containerName;
     }
 
     public boolean isLock() {

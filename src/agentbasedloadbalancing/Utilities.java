@@ -1,9 +1,9 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Agent-based testbed described and evaluated in
+ * J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado, "Agent Coalitions for Load Balancing in Cloud Data Centers",
+ * Journal of Parallel and Distributed Computing, 2022.
  */
-package intraloadbalancing;
+package agentbasedloadbalancing;
 
 import jade.core.Agent;
 import jade.domain.DFService;
@@ -12,19 +12,14 @@ import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 
-import java.io.File;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 
 /**
- * @author octavio
+ * @author J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado
  */
 public class Utilities {
 
     public Utilities() {
-
     }
 
     public void unpublishService(Agent a) {
@@ -47,7 +42,6 @@ public class Utilities {
         } catch (FIPAException fe) {
             System.out.println(fe);
         }
-
     }
 
     public String[] searchForAgents(Agent searchingAgent, String agentType, long maxResults) {// array of Strings that contains addresses of agents which will satisfy a given requirement
@@ -91,32 +85,12 @@ public class Utilities {
                 } else {
                     return providers;
                 }
-
             } else {
                 System.out.println("Agent " + searchingAgent.getLocalName() + " did not find any " + agentType + " service");
             }
-
         } catch (FIPAException fe) {
             System.out.println(fe);
         }
-
         return null;
     }
-
-//    public Graph<String, DefaultEdge> importGMLGraph(String graphPathFile) {
-//        try {
-//            File file = new File(graphPathFile);
-//            Graph<String, DefaultEdge> g = new SimpleGraph<>(DefaultEdge.class);
-//            VertexProvider<String> vp = (id, attributes) -> id + "-" + attributes;
-//            EdgeProvider<String, DefaultEdge> ep = (from, to, label, attributes) -> g.getEdgeSupplier().get();
-//            GmlImporter<String, DefaultEdge> importer = new GmlImporter<>(vp, ep);
-//            importer.importGraph(g, file);
-//            return g;
-//
-//        } catch (ImportException ex) {
-//            Logger.getLogger(Utilities.class.getName()).log(Level.SEVERE, null, ex);
-//            return null;
-//        }
-//    }
-
 }

@@ -1,10 +1,15 @@
-package intraloadbalancing;
+/*
+ * Agent-based testbed described and evaluated in
+ * J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado, "Agent Coalitions for Load Balancing in Cloud Data Centers",
+ * Journal of Parallel and Distributed Computing, 2022.
+ */
+package agentbasedloadbalancing;
 
 import java.util.ArrayList;
 import java.util.function.Predicate;
 
 /**
- * @author JGUTIERRGARC
+ * @author J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado
  */
 class HostDescription implements java.io.Serializable {
 
@@ -26,10 +31,9 @@ class HostDescription implements java.io.Serializable {
     private boolean willingToParticipateInCNP = false;
     private boolean leader = false;
     private int CPUMigrationHeuristicId = 0;
-    private int memoryMigrationHeuristicId = 0; // TBD potentially a random heuristic to avoid bias
+    private int memoryMigrationHeuristicId = 0;
     private String containerName = "";
     private ArrayList<VirtualMachineDescription> virtualMachinesHosted = new ArrayList<VirtualMachineDescription>();
-    ;
     private String allocatorId = "";
     private String myLeader = "";
 
@@ -37,7 +41,6 @@ class HostDescription implements java.io.Serializable {
         this.willingToParticipateInCNP = true;
         this.virtualMachinesHosted = new ArrayList<VirtualMachineDescription>();
     }
-
 
     public HostDescription(boolean leader, String id, int coalition, double memoryUsage, double CPUUsage, double memory, double memoryUsed, int numberOfVirtualCores, int numberOfVirtualCoresUsed, int lowMigrationThresholdForCPU, int highMigrationThresholdForCPU, int lowMigrationThresholdForMemory, int highMigrationThresholdForMemory, int CPUMigrationHeuristicId, int memoryMigrationHeuristicId, String allocatorId, String containerName, String myLeader) {
         this.leader = leader;
@@ -95,7 +98,6 @@ class HostDescription implements java.io.Serializable {
         availableVMs.removeIf(condition);
         return !availableVMs.isEmpty();
     }
-
 
     public String getMyLeader() {
         return myLeader;
@@ -277,25 +279,6 @@ class HostDescription implements java.io.Serializable {
 
     @Override
     public String toString() {
-        return "InProgress=" + inProgress
-                + ", id=" + id
-                + ", coalition=" + coalition
-                + ", Leader=" + leader
-                + ", containerName=" + containerName
-                + ", nCores=" + numberOfVirtualCores
-                + ", nCoresUsed=" + numberOfVirtualCoresUsed
-                + ", nLockedCores=" + numberOfLockedVirtualCores
-                + ", CPUUsage=" + String.format("%.2f", CPUUsage)
-                + ", mem=" + memory
-                + ", memUsed=" + memoryUsed
-                + ", memUsage=" + String.format("%.2f", memoryUsage)
-                + ", lockedMemory=" + String.format("%.2f", lockedMemory)
-                + ", lowThresCPU=" + lowMigrationThresholdForCPU
-                + ", highThresCPU=" + highMigrationThresholdForCPU
-                + ", lowThresMem=" + lowMigrationThresholdForMemory
-                + ", highThresMem=" + highMigrationThresholdForMemory
-                + ", myLeader=" + myLeader
-                + ", numberOfVMs=" + virtualMachinesHosted.size();
+        return "InProgress=" + inProgress + ", id=" + id + ", coalition=" + coalition + ", Leader=" + leader + ", containerName=" + containerName + ", nCores=" + numberOfVirtualCores + ", nCoresUsed=" + numberOfVirtualCoresUsed + ", nLockedCores=" + numberOfLockedVirtualCores + ", CPUUsage=" + String.format("%.2f", CPUUsage) + ", mem=" + memory + ", memUsed=" + memoryUsed + ", memUsage=" + String.format("%.2f", memoryUsage) + ", lockedMemory=" + String.format("%.2f", lockedMemory) + ", lowThresCPU=" + lowMigrationThresholdForCPU + ", highThresCPU=" + highMigrationThresholdForCPU + ", lowThresMem=" + lowMigrationThresholdForMemory + ", highThresMem=" + highMigrationThresholdForMemory + ", myLeader=" + myLeader + ", numberOfVMs=" + virtualMachinesHosted.size();
     }
-
 }

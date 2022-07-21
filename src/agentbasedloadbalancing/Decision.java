@@ -1,14 +1,14 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Agent-based testbed described and evaluated in
+ * J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado, "Agent Coalitions for Load Balancing in Cloud Data Centers",
+ * Journal of Parallel and Distributed Computing, 2022.
  */
-package intraloadbalancing;
+package agentbasedloadbalancing;
 
 import java.io.Serializable;
 
 /**
- * @author octavio
+ * @author J.O. Gutierrez-Garcia, J.A. Trejo-Sánchez, D. Fajardo-Delgado
  */
 public class Decision implements Serializable {
 
@@ -38,7 +38,6 @@ public class Decision implements Serializable {
         this.selectedVM = selectedVM;
         this.decision = decision;
     }
-
 
     public HostDescription getSourceHost() {
         return sourceHost;
@@ -108,6 +107,4 @@ public class Decision implements Serializable {
     public String toString() {
         return "Decision{" + "destinationHost=" + destinationHost + ", sourceHost=" + sourceHost + ", selectedVM=" + selectedVM + ", decision=" + decision + ", lowMigrationThresholdForCPU=" + lowMigrationThresholdForCPU + ", highMigrationThresholdForCPU=" + highMigrationThresholdForCPU + ", lowMigrationThresholdForMemory=" + lowMigrationThresholdForMemory + ", highMigrationThresholdForMemory=" + highMigrationThresholdForMemory + '}';
     }
-
-
 }
