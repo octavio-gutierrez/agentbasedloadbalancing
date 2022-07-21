@@ -37,3 +37,5 @@ The VM migration object includes information related to a VM migration event as 
 {"source_coalition":20, "destination_coalition":28, "migrationType":"AtoB", "origin":"HostAgent20", "destination":"HostAgent29", "vmid":"VirtualMachineAgent19", "distance":6.0, "time":1658410910978}
 
 If no input arguments are provided, the agent-based testbed will run a simulation using the default values.
+
+The main class is AgentBasedLoadBalancing.java
